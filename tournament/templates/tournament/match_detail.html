@@ -1,0 +1,40 @@
+{% extends 'tournament/base.html' %}
+
+{% block title %}{{ match.home_team.name }} vs {{ match.away_team.name }} - Tournament System{% endblock %}
+
+{% block content %}
+<h2>Match Details</h2>
+
+<div class="match-card" style="margin-bottom: 30px;">
+    <div class="match-header">
+        <span class="status-badge status-{{ match.status }}">{{ match.get_status_display }}</span>
+        <span>{{ match.stage }}{% if match.group %} - Group {{ match.group }}{% endif %}{% if match.match_time %} - {{ match.match_time|date:"H:i" }}{% endif %}</span>
+    </div>
+    <div class="match-teams">
+        <div class="team">{{ match.home_team.name }}</div>
+        {% if match.status == 'finished' %}
+        <div class="score">{{ match.home_score }} - {{ match.away_score }}</div>
+        {% else %}
+        <div class="score">VS</div>
+        {% endif %}
+        <div class="team">{{ match.away_team.name }}</div>
+    </div>
+
+    {% if goals %}
+    <div class="goals-list">
+        <h3>Goal Scorers</h3>
+        {% for goal in goals %}
+        <div class="goal-item">
+            <span class="goal-icon">⚽</span>
+            <strong>{{ goal.player.name }}</strong>
+            <span>({{ goal.team.name }})</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<p style="text-align: center;">
+    <a href="{% url 'tournament:results' %}" style="color: #667eea; text-decoration: none; font-weight: bold;">← Back to Results</a>
+</p>
+{% endblock %}

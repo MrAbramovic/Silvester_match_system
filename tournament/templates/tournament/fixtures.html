@@ -1,0 +1,45 @@
+{% extends 'tournament/base.html' %}
+
+{% block title %}Fixtures - Tournament System{% endblock %}
+
+{% block content %}
+<h2>All Fixtures</h2>
+
+<div class="filters">
+    <form method="get" style="display: flex; gap: 15px; flex-wrap: wrap;">
+        <select name="group" onchange="this.form.submit()">
+            <option value="">All Groups</option>
+            {% for group in groups %}
+            <option value="{{ group }}" {% if selected_group == group %}selected{% endif %}>Group {{ group }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="stage" onchange="this.form.submit()">
+            <option value="">All Stages</option>
+            {% for stage in stages %}
+            <option value="{{ stage }}" {% if selected_stage == stage %}selected{% endif %}>{{ stage }}</option>
+            {% endfor %}
+        </select>
+
+        <a href="{% url 'tournament:fixtures' %}">Clear Filters</a>
+    </form>
+</div>
+
+{% if matches %}
+    {% for match in matches %}
+    <div class="match-card">
+        <div class="match-header">
+            <span class="status-badge status-scheduled">{{ match.get_status_display }}</span>
+            <span>{{ match.stage }}{% if match.group %} - Group {{ match.group }}{% endif %}{% if match.match_time %} - {{ match.match_time|date:"H:i" }}{% endif %}</span>
+        </div>
+        <div class="match-teams">
+            <div class="team">{{ match.home_team.name }}</div>
+            <div class="score">VS</div>
+            <div class="team">{{ match.away_team.name }}</div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="no-data">No fixtures found</div>
+{% endif %}
+{% endblock %}
