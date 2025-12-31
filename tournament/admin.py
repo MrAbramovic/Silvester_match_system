@@ -21,7 +21,6 @@ class PlayerAdmin(admin.ModelAdmin):
 class GoalInline(admin.TabularInline):
     model = Goal
     extra = 1
-    autocomplete_fields = ['player']
 
 
 @admin.register(Match)
@@ -51,4 +50,3 @@ class GoalAdmin(admin.ModelAdmin):
     list_display = ['player', 'team', 'match']
     list_filter = ['team', 'match']
     search_fields = ['player__name']
-    autocomplete_fields = ['player']
