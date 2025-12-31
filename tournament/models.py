@@ -80,42 +80,88 @@ class Match(models.Model):
 
     def update_team_stats(self):
         """Update team statistics based on match result"""
-        for team in [self.home_team, self.away_team]:
-            team.played = 0
-            team.won = 0
-            team.drawn = 0
-            team.lost = 0
-            team.goals_for = 0
-            team.goals_against = 0
-            team.points = 0
+        from django.db.models import Q
 
-        finished_matches = Match.objects.filter(status='finished')
+        # Reset ALL team stats to zero first
+        Team.objects.all().update(
+            played=0,
+            won=0,
+            drawn=0,
+            lost=0,
+            goals_for=0,
+            goals_against=0,
+            points=0
+        )
+
+        # Get all finished group stage matches
+        # Handle multiple stage format possibilities
+        finished_matches = Match.objects.filter(
+            status='finished'
+        ).filter(
+            Q(stage__icontains='group') |
+            Q(stage='group_stage') |
+            Q(stage='Group Stage')
+        )
+
+        print(f"Found {finished_matches.count()} finished group stage matches")  # Debug
+
+        # Build stats dictionary for each team
+        team_stats = {}
 
         for match in finished_matches:
-            match.home_team.played += 1
-            match.home_team.goals_for += match.home_score
-            match.home_team.goals_against += match.away_score
+            print(f"Processing: {match.home_team.name} {match.home_score}-{match.away_score} {match.away_team.name}")  # Debug
 
-            match.away_team.played += 1
-            match.away_team.goals_for += match.away_score
-            match.away_team.goals_against += match.home_score
+            # Initialize team stats if not exists
+            if match.home_team.id not in team_stats:
+                team_stats[match.home_team.id] = {
+                    'team': match.home_team,
+                    'played': 0, 'won': 0, 'drawn': 0, 'lost': 0,
+                    'goals_for': 0, 'goals_against': 0, 'points': 0
+                }
+            if match.away_team.id not in team_stats:
+                team_stats[match.away_team.id] = {
+                    'team': match.away_team,
+                    'played': 0, 'won': 0, 'drawn': 0, 'lost': 0,
+                    'goals_for': 0, 'goals_against': 0, 'points': 0
+                }
 
+            # Update played count
+            team_stats[match.home_team.id]['played'] += 1
+            team_stats[match.away_team.id]['played'] += 1
+
+            # Update goals
+            team_stats[match.home_team.id]['goals_for'] += match.home_score
+            team_stats[match.home_team.id]['goals_against'] += match.away_score
+            team_stats[match.away_team.id]['goals_for'] += match.away_score
+            team_stats[match.away_team.id]['goals_against'] += match.home_score
+
+            # Update win/draw/loss and points
             if match.home_score > match.away_score:
-                match.home_team.won += 1
-                match.home_team.points += 3
-                match.away_team.lost += 1
+                team_stats[match.home_team.id]['won'] += 1
+                team_stats[match.home_team.id]['points'] += 3
+                team_stats[match.away_team.id]['lost'] += 1
             elif match.home_score < match.away_score:
-                match.away_team.won += 1
-                match.away_team.points += 3
-                match.home_team.lost += 1
+                team_stats[match.away_team.id]['won'] += 1
+                team_stats[match.away_team.id]['points'] += 3
+                team_stats[match.home_team.id]['lost'] += 1
             else:
-                match.home_team.drawn += 1
-                match.away_team.drawn += 1
-                match.home_team.points += 1
-                match.away_team.points += 1
+                team_stats[match.home_team.id]['drawn'] += 1
+                team_stats[match.home_team.id]['points'] += 1
+                team_stats[match.away_team.id]['drawn'] += 1
+                team_stats[match.away_team.id]['points'] += 1
 
-        for team in Team.objects.all():
+        # Save all team stats
+        for team_id, stats in team_stats.items():
+            team = stats['team']
+            team.played = stats['played']
+            team.won = stats['won']
+            team.drawn = stats['drawn']
+            team.lost = stats['lost']
+            team.goals_for = stats['goals_for']
+            team.goals_against = stats['goals_against']
+            team.points = stats['points']
             team.save()
+            print(f"Updated {team.name}: {team.points} points")  # Debug
 
 
 class Goal(models.Model):
