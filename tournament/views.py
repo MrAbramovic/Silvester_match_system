@@ -77,9 +77,11 @@ def standings(request):
 
 
 def top_scorers(request):
+    """Top scorers page"""
+    # Get all players who have scored, count their goals
     players = Player.objects.annotate(
-        goals=Count('goals')
-    ).filter(goals__gt=0).order_by('-goals', 'name')
+        goals_scored=Count('goals')
+    ).filter(goals_scored__gt=0).order_by('-goals_scored', 'name')
 
     context = {
         'players': players,
